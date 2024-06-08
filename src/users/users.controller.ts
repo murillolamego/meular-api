@@ -14,12 +14,16 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { UsersService } from './users.service';
 import { cuidPipe } from '../common/pipes/cuid.pipe';
+import { Throttle } from '@nestjs/throttler';
+import { UseGuards } from '@nestjs/common/decorators';
+import { AccessTokenGuard } from '../common/guards/accessToken.guard';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post()
   @ApiResponse({
     status: 201,
@@ -35,6 +39,7 @@ export class UsersController {
   }
 
   @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard)
   @Get()
   @ApiResponse({
     status: 200,
@@ -55,6 +60,7 @@ export class UsersController {
   }
 
   @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard)
   @Get(':id')
   @ApiResponse({
     status: 200,
@@ -75,6 +81,7 @@ export class UsersController {
   }
 
   @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard)
   @Patch(':id')
   @ApiResponse({
     status: 200,
@@ -102,6 +109,7 @@ export class UsersController {
   }
 
   @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard)
   @Delete(':id')
   @ApiResponse({
     status: 200,

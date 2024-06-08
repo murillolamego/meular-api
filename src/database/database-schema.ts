@@ -9,6 +9,7 @@ export const users = pgTable('users', {
   username: text('username').unique(),
   password: text('password').notNull(),
   name: text('name').notNull(),
+  refreshToken: text('refresh_token'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   deletedAt: timestamp('deleted_at'),

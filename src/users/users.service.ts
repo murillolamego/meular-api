@@ -18,7 +18,11 @@ function dbConstraintFail(constraint: string) {
 }
 
 // Only select safe columns, omit password, refresh tokens, etc
-const { password, ...safeUserCols } = getTableColumns(databaseSchema.users);
+const { password, refreshToken, ...safeUserCols } = getTableColumns(
+  databaseSchema.users,
+);
+
+export const safeUser = safeUserCols;
 
 @Injectable()
 export class UsersService {

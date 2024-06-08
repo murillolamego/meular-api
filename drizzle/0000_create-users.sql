@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"username" text,
 	"password" text NOT NULL,
 	"name" text NOT NULL,
+	"refresh_token" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,

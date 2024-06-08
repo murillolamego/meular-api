@@ -4,7 +4,8 @@ export class UnsafeUserEntity {
   email: string;
   username: string | null;
   password: string;
-  name: string | null;
+  name: string;
+  refreshToken: string | null;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
@@ -15,7 +16,7 @@ export class UserEntity {
   id: string;
   email: string;
   username: string | null;
-  name: string | null;
+  name: string;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;

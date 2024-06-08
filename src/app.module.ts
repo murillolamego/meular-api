@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { DatabaseModule } from './database/database.module';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -15,6 +18,12 @@ import { DatabaseModule } from './database/database.module';
       cache: true,
       expandVariables: true,
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 6,
+        limit: 10,
+      },
+    ]),
     DatabaseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -27,6 +36,13 @@ import { DatabaseModule } from './database/database.module';
       }),
     }),
     UsersModule,
+    AuthModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}
