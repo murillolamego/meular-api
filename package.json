@@ -18,8 +18,13 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "generate": "drizzle-kit generate",
-    "migrate": "drizzle-kit migrate"
+    "generate:dev": "dotenv -e .env.development.local drizzle-kit generate --",
+    "migrate:dev": "dotenv -e .env.development.local drizzle-kit migrate",
+    "docker:up": "docker-compose --env-file .env.development.local up -d",
+    "docker:down": "docker-compose --env-file .env.development.local down",
+    "docker-test:up": "docker-compose --env-file .env.test.local -p meular-api-test -f compose-test.yml up -d",
+    "docker-test:down": "docker-compose --env-file .env.test.local -p meular-api-test -f compose-test.yml down",
+    "studio": "dotenv -e .env.development.local drizzle-kit studio"
   },
   "dependencies": {
     "@fastify/static": "^7.0.4",
@@ -34,8 +39,9 @@
     "argon2": "^0.40.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
-    "dotenv": "^16.4.5",
+    "dotenv-cli": "^7.4.2",
     "drizzle-orm": "^0.31.2",
+    "pg": "^8.12.0",
     "postgres": "^3.4.4",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"

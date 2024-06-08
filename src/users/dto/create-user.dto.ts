@@ -7,4 +7,7 @@ export class CreateUserDto {
   @IsStrongPassword()
   @MaxLength(50)
   password: string;
+
+  @MaxLength(60)
+  name: string;
 }

@@ -9,9 +9,9 @@ export const users = pgTable('users', {
   username: text('username').unique(),
   password: text('password').notNull(),
   name: text('name').notNull(),
-  createdAt: timestamp('created_at'),
-  updatedAt: timestamp('updated_at'),
-  deletedAt: timestamp('updated_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 export const databaseSchema = {

@@ -1,70 +1,119 @@
 import * as argon2 from 'argon2';
 
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  ServiceUnavailableException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
+import { DrizzleService } from '../database/drizzle.service';
+import { databaseSchema } from '../database/database-schema';
+import { eq, getTableColumns } from 'drizzle-orm';
+import { NotFoundException } from '@nestjs/common/exceptions';
+
+function dbConstraintFail(constraint: string) {
+  return `${constraint.split('_')[1]} already exists`;
+}
+
+// Only select safe columns, omit password, refresh tokens, etc
+const { password, ...safeUserCols } = getTableColumns(databaseSchema.users);
 
 @Injectable()
 export class UsersService {
-  constructor() {}
+  constructor(private readonly drizzleService: DrizzleService) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserEntity> {
     try {
       createUserDto.password = await argon2.hash(createUserDto.password);
+      const createdUser = await this.drizzleService.db
+        .insert(databaseSchema.users)
+        .values(createUserDto)
+        .returning(safeUserCols);
 
-      const user = new UserEntity();
-
-      return user;
+      return createdUser[0];
     } catch (error) {
-      throw new ServiceUnavailableException('User creation on database failed');
+      if (error.code === '23505') {
+        throw new BadRequestException(dbConstraintFail(error.constraint));
+      }
+      throw new ServiceUnavailableException('user creation on database failed');
     }
   }
 
   async findAll(): Promise<UserEntity[]> {
     try {
-      const user = new UserEntity();
-
-      return [user];
+      return await this.drizzleService.db
+        .select(safeUserCols)
+        .from(databaseSchema.users);
     } catch (error) {
       throw new ServiceUnavailableException(
-        'Fetching users from database failed',
+        'fetching users from database failed',
       );
     }
   }
 
   async findOne(id: string): Promise<UserEntity> {
     try {
-      const user = new UserEntity();
-
-      return user;
+      const users: UserEntity[] = await this.drizzleService.db
+        .select(safeUserCols)
+        .from(databaseSchema.users)
+        .where(eq(databaseSchema.users.id, id))
+        .limit(1);
+      if (!users.length) {
+        throw new NotFoundException();
+      }
+      return users[0];
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(`user with id ${id} not found`);
+      }
       throw new ServiceUnavailableException(
-        `Fetching user with id ${id} from database failed`,
+        `fetching user with id ${id} from database failed`,
       );
     }
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<UserEntity> {
     try {
-      const user = new UserEntity();
+      const updatedUsers = await this.drizzleService.db
+        .update(databaseSchema.users)
+        .set(updateUserDto)
+        .where(eq(databaseSchema.users.id, id))
+        .returning(safeUserCols);
 
-      return user;
+      if (!updatedUsers.length) {
+        throw new NotFoundException();
+      }
+      return updatedUsers[0];
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(`user with id ${id} not found`);
+      }
       throw new ServiceUnavailableException(
-        `Updating user with id ${id} on database failed, params: ${updateUserDto}`,
+        `updating user with id ${id} on database failed, params: ${updateUserDto}`,
       );
     }
   }
 
   async remove(id: string): Promise<UserEntity> {
     try {
-      const user = new UserEntity();
+      const deletedUsers = await this.drizzleService.db
+        .delete(databaseSchema.users)
+        .where(eq(databaseSchema.users.id, id))
+        .returning(safeUserCols);
 
-      return user;
+      if (!deletedUsers.length) {
+        throw new NotFoundException();
+      }
+
+      return deletedUsers[0];
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(`user with id ${id} not found`);
+      }
       throw new ServiceUnavailableException(
-        `Removing user with id ${id} on database failed`,
+        `removing user with id ${id} on database failed`,
       );
     }
   }

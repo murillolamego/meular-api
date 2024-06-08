@@ -38,7 +38,7 @@ async function bootstrap() {
   );
   const configService = app.get(ConfigService);
 
-  const port = configService.get<string>('serverPort');
+  const port = configService.get<string>('SERVER_PORT');
   const config = new DocumentBuilder()
     .setTitle('MeuLar API')
     .setVersion('1.0.0')
@@ -46,7 +46,11 @@ async function bootstrap() {
     .build();
 
   app.enableCors();
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Only accept DTO fields
+    }),
+  );
   app.setGlobalPrefix('v1');
 
   const document = SwaggerModule.createDocument(app, config);
