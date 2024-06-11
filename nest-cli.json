@@ -12,6 +12,8 @@
           "introspectComments": true
         }
       }
-    ]
+    ],
+    "assets": ["common/mail/templates/**/*.hbs"],
+    "watchAssets": true
   }
 }

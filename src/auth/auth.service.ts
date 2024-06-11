@@ -10,7 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 
 import { SignInDto } from './dto/auth.dto';
 import { ConfigService } from '@nestjs/config';
-import { UsersService, safeUser } from '../users/users.service';
+import { safeUser } from '../users/users.service';
 import { UnsafeUserEntity } from '../users/entities/user.entity';
 import { DrizzleService } from '../database/drizzle.service';
 import { databaseSchema } from '../database/database-schema';
@@ -22,7 +22,6 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly drizzleService: DrizzleService,
-    private readonly usersService: UsersService,
   ) {}
 
   async signIn({ email, password }: SignInDto) {

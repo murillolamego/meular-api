@@ -13,10 +13,12 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { UsersService } from './users.service';
-import { cuidPipe } from '../common/pipes/cuid.pipe';
 import { Throttle } from '@nestjs/throttler';
 import { UseGuards } from '@nestjs/common/decorators';
 import { AccessTokenGuard } from '../common/guards/accessToken.guard';
+import { parseEmail } from '../common/pipes/email.pipe';
+import { parseCUID } from '../common/pipes/cuid.pipe';
+import { ResetPasswordDto } from './dto/reset-password';
 
 @ApiTags('users')
 @Controller('users')
@@ -76,8 +78,38 @@ export class UsersController {
     status: 503,
     description: 'The server could not process your request at this moment',
   })
-  findOne(@Param('id', cuidPipe) id: string): Promise<UserEntity> {
+  findOne(@Param('id', parseCUID) id: string): Promise<UserEntity> {
     return this.usersService.findOne(id);
+  }
+
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Post('/reset-password')
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset successful',
+  })
+  @ApiResponse({ status: 404, description: 'Record not found' })
+  @ApiResponse({
+    status: 503,
+    description: 'The server could not process your request at this moment',
+  })
+  resetPassword(@Body() resetPasswordDto: ResetPasswordDto): Promise<void> {
+    return this.usersService.resetPassword(resetPasswordDto);
+  }
+
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Get('/email/:email/forgot-password')
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset intructions sent to the email provided',
+  })
+  @ApiResponse({ status: 404, description: 'Record not found' })
+  @ApiResponse({
+    status: 503,
+    description: 'The server could not process your request at this moment',
+  })
+  forgotPassword(@Param('email', parseEmail) email: string): Promise<void> {
+    return this.usersService.forgotPassword(email);
   }
 
   @ApiBearerAuth()
@@ -102,7 +134,7 @@ export class UsersController {
     description: 'The server could not process your request at this moment',
   })
   update(
-    @Param('id', cuidPipe) id: string,
+    @Param('id', parseCUID) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserEntity> {
     return this.usersService.update(id, updateUserDto);
@@ -129,7 +161,7 @@ export class UsersController {
     status: 503,
     description: 'The server could not process your request at this moment',
   })
-  remove(@Param('id', cuidPipe) id: string): Promise<UserEntity> {
+  remove(@Param('id', parseCUID) id: string): Promise<UserEntity> {
     return this.usersService.remove(id);
   }
 }

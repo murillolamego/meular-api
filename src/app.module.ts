@@ -5,6 +5,8 @@ import { DatabaseModule } from './database/database.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 
 @Module({
   imports: [
@@ -37,6 +39,31 @@ import { AuthModule } from './auth/auth.module';
     }),
     UsersModule,
     AuthModule,
+    MailerModule.forRootAsync({
+      useFactory: () => ({
+        transport: {
+          host: 'sandbox.smtp.mailtrap.io',
+          secure: false,
+          port: 2525,
+          auth: {
+            user: '926b050385faf4',
+            pass: 'dd43bf302b5ad1',
+          },
+          ignoreTLS: true,
+        },
+        defaults: {
+          from: '"MeuLar.com" <hi@meular.com>',
+        },
+        preview: true,
+        template: {
+          dir: __dirname + '/common/mail/templates',
+          adapter: new HandlebarsAdapter(),
+          options: {
+            strict: true,
+          },
+        },
+      }),
+    }),
   ],
   providers: [
     {

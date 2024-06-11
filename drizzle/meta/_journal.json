@@ -8,6 +8,13 @@
       "when": 1717847902585,
       "tag": "0000_create-users",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1718062763150,
+      "tag": "0001_create-password-recovery",
+      "breakpoints": true
     }
   ]
 }

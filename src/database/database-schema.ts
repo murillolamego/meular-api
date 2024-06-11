@@ -15,6 +15,16 @@ export const users = pgTable('users', {
   deletedAt: timestamp('deleted_at'),
 });
 
+export const passwordRecovery = pgTable('password-recovery', {
+  id: text('id')
+    .$defaultFn(() => createId())
+    .primaryKey(),
+  userId: text('user_id').notNull(),
+  token: text('token').unique().notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 export const databaseSchema = {
   users,
+  passwordRecovery,
 };
