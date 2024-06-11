@@ -86,6 +86,27 @@ export class UsersService {
     }
   }
 
+  async findOneByEmail(email: string): Promise<UserEntity> {
+    try {
+      const users: UserEntity[] = await this.drizzleService.db
+        .select(safeUser)
+        .from(databaseSchema.users)
+        .where(eq(databaseSchema.users.email, email))
+        .limit(1);
+      if (!users.length) {
+        throw new NotFoundException();
+      }
+      return users[0];
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(`user with email ${email} not found`);
+      }
+      throw new ServiceUnavailableException(
+        `fetching user with email ${email} from database failed`,
+      );
+    }
+  }
+
   async forgotPassword(email: string): Promise<void> {
     let users: UserEntity[] = [];
     let token = randomBytes(25).toString('hex');

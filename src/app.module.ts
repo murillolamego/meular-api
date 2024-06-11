@@ -7,6 +7,8 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import { PropertyCategoriesModule } from './property-categories/property-categories.module';
+import { PropertyTypesModule } from './property-types/property-types.module';
 
 @Module({
   imports: [
@@ -64,6 +66,8 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
         },
       }),
     }),
+    PropertyCategoriesModule,
+    PropertyTypesModule,
   ],
   providers: [
     {

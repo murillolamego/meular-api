@@ -82,6 +82,29 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard)
+  @Get('email/:email')
+  @ApiResponse({
+    status: 200,
+    description: 'The found record',
+    type: UserEntity,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid or missing authentication credentials',
+  })
+  @ApiResponse({ status: 404, description: 'Record not found' })
+  @ApiResponse({
+    status: 503,
+    description: 'The server could not process your request at this moment',
+  })
+  findOneByEmail(
+    @Param('email', parseEmail) email: string,
+  ): Promise<UserEntity> {
+    return this.usersService.findOneByEmail(email);
+  }
+
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('/reset-password')
   @ApiResponse({
