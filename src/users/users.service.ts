@@ -16,10 +16,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'crypto';
 import { ResetPasswordDto } from './dto/reset-password';
-
-function dbConstraintFail(constraint: string) {
-  return `${constraint.split('_')[1]} already exists`;
-}
+import { dbConstraintFail } from '../utils/dbContraint/dbConstraint';
 
 // Only select safe columns, omit password, refresh tokens, etc
 const { password, refreshToken, ...safeUserCols } = getTableColumns(

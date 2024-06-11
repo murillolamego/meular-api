@@ -1,11 +1,23 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { PropertyCategoriesService } from './property-categories.service';
 import { CreatePropertyCategoryDto } from './dto/create-property-category.dto';
 import { UpdatePropertyCategoryDto } from './dto/update-property-category.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('property-categories')
 @Controller('property-categories')
 export class PropertyCategoriesController {
-  constructor(private readonly propertyCategoriesService: PropertyCategoriesService) {}
+  constructor(
+    private readonly propertyCategoriesService: PropertyCategoriesService,
+  ) {}
 
   @Post()
   create(@Body() createPropertyCategoryDto: CreatePropertyCategoryDto) {
@@ -23,8 +35,14 @@ export class PropertyCategoriesController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePropertyCategoryDto: UpdatePropertyCategoryDto) {
-    return this.propertyCategoriesService.update(+id, updatePropertyCategoryDto);
+  update(
+    @Param('id') id: string,
+    @Body() updatePropertyCategoryDto: UpdatePropertyCategoryDto,
+  ) {
+    return this.propertyCategoriesService.update(
+      +id,
+      updatePropertyCategoryDto,
+    );
   }
 
   @Delete(':id')
