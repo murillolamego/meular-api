@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS "password-recovery" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"public_id" varchar(12) NOT NULL,
 	"user_id" text NOT NULL,
 	"token" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -7,11 +8,14 @@ CREATE TABLE IF NOT EXISTS "password-recovery" (
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "properties" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"public_id" varchar(12) NOT NULL,
+	"title" text NOT NULL,
 	"user_id" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"deleted_at" timestamp
+	"deleted_at" timestamp,
+	CONSTRAINT "properties_public_id_unique" UNIQUE("public_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "property_categories" (
@@ -21,13 +25,13 @@ CREATE TABLE IF NOT EXISTS "property_categories" (
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "property_on_categories" (
-	"property_id" text NOT NULL,
+	"property_id" integer NOT NULL,
 	"category_id" integer NOT NULL,
 	CONSTRAINT "property_on_categories_property_id_category_id_pk" PRIMARY KEY("property_id","category_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "property_on_types" (
-	"property_id" text NOT NULL,
+	"property_id" integer NOT NULL,
 	"type_id" integer NOT NULL,
 	CONSTRAINT "property_on_types_property_id_type_id_pk" PRIMARY KEY("property_id","type_id")
 );
@@ -39,7 +43,8 @@ CREATE TABLE IF NOT EXISTS "property_types" (
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "users" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"public_id" varchar(12) NOT NULL,
 	"email" text NOT NULL,
 	"username" text,
 	"password" text NOT NULL,
@@ -48,12 +53,13 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
+	CONSTRAINT "users_public_id_unique" UNIQUE("public_id"),
 	CONSTRAINT "users_email_unique" UNIQUE("email"),
 	CONSTRAINT "users_username_unique" UNIQUE("username")
 );
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "properties" ADD CONSTRAINT "properties_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "properties" ADD CONSTRAINT "properties_user_id_users_public_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("public_id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -81,3 +87,7 @@ DO $$ BEGIN
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
+--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_password_recovery_public_id" ON "password-recovery" USING btree ("public_id");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_properties_public_id" ON "properties" USING btree ("public_id");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_user_public_id" ON "users" USING btree ("public_id");

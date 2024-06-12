@@ -41,9 +41,9 @@ export class AuthService {
         throw new UnauthorizedException();
       }
 
-      const tokens = await this.getTokens(users[0].id, users[0].name);
+      const tokens = await this.getTokens(users[0].publicId, users[0].name);
 
-      await this.setRefreshToken(users[0].id, tokens.refreshToken);
+      await this.setRefreshToken(users[0].publicId, tokens.refreshToken);
 
       return tokens;
     } catch (error) {
@@ -70,7 +70,7 @@ export class AuthService {
     const updatedUsers = await this.drizzleService.db
       .update(databaseSchema.users)
       .set({ refreshToken })
-      .where(eq(databaseSchema.users.id, userId))
+      .where(eq(databaseSchema.users.publicId, userId))
       .returning(safeUser);
 
     if (!updatedUsers.length) {
@@ -87,7 +87,7 @@ export class AuthService {
         },
         {
           secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-          expiresIn: '15m',
+          expiresIn: '7d', // 5m
         },
       ),
       this.jwtService.signAsync(
@@ -112,7 +112,7 @@ export class AuthService {
     const users: UnsafeUserEntity[] = await this.drizzleService.db
       .select()
       .from(databaseSchema.users)
-      .where(eq(databaseSchema.users.id, userId))
+      .where(eq(databaseSchema.users.publicId, userId))
       .limit(1);
     if (!users.length) {
       throw new NotFoundException();
@@ -131,8 +131,8 @@ export class AuthService {
         'invalid credentials provided, please try again',
       );
     }
-    const tokens = await this.getTokens(users[0].id, users[0].name);
-    await this.setRefreshToken(users[0].id, tokens.refreshToken);
+    const tokens = await this.getTokens(users[0].publicId, users[0].name);
+    await this.setRefreshToken(users[0].publicId, tokens.refreshToken);
     return tokens;
   }
 }

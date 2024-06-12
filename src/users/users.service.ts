@@ -16,14 +16,13 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'crypto';
 import { ResetPasswordDto } from './dto/reset-password';
-import { dbConstraintFail } from '../utils/dbContraint/dbConstraint';
 
-// Only select safe columns, omit password, refresh tokens, etc
-const { password, refreshToken, ...safeUserCols } = getTableColumns(
+// Only select SAFE columns, omit id, password, refresh tokens, etc
+const { id, password, refreshToken, ...safeUserColumns } = getTableColumns(
   databaseSchema.users,
 );
 
-export const safeUser = safeUserCols;
+export const safeUser = safeUserColumns;
 
 @Injectable()
 export class UsersService {
@@ -43,9 +42,6 @@ export class UsersService {
 
       return createdUser[0];
     } catch (error) {
-      if (error.code === '23505') {
-        throw new BadRequestException(dbConstraintFail(error.constraint));
-      }
       throw new ServiceUnavailableException('user creation on database failed');
     }
   }
@@ -62,12 +58,12 @@ export class UsersService {
     }
   }
 
-  async findOne(id: string): Promise<UserEntity> {
+  async findOne(publicId: string): Promise<UserEntity> {
     try {
       const users: UserEntity[] = await this.drizzleService.db
         .select(safeUser)
         .from(databaseSchema.users)
-        .where(eq(databaseSchema.users.id, id))
+        .where(eq(databaseSchema.users.publicId, publicId))
         .limit(1);
       if (!users.length) {
         throw new NotFoundException();
@@ -123,7 +119,7 @@ export class UsersService {
       const createdPasswordRecovery = await this.drizzleService.db
         .insert(databaseSchema.passwordRecovery)
         .values({
-          userId: users[0].id,
+          userId: users[0].publicId,
           token: hashedToken,
         })
         .returning();
@@ -157,7 +153,7 @@ export class UsersService {
   }
 
   async resetPassword({
-    id,
+    publicId,
     token,
     password,
   }: ResetPasswordDto): Promise<void> {
@@ -165,7 +161,7 @@ export class UsersService {
       const passwordRecovery = await this.drizzleService.db
         .select()
         .from(databaseSchema.passwordRecovery)
-        .where(eq(databaseSchema.passwordRecovery.id, id))
+        .where(eq(databaseSchema.passwordRecovery.publicId, publicId))
         .limit(1);
       if (!passwordRecovery.length) {
         throw new NotFoundException('invalid token provided');
@@ -198,7 +194,7 @@ export class UsersService {
       const updatedUsers = await this.drizzleService.db
         .update(databaseSchema.users)
         .set({ password: hashedPassword })
-        .where(eq(databaseSchema.users.id, passwordRecovery[0].userId))
+        .where(eq(databaseSchema.users.publicId, passwordRecovery[0].userId))
         .returning(safeUser);
 
       if (!updatedUsers.length) {
@@ -217,12 +213,15 @@ export class UsersService {
     }
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserEntity> {
+  async update(
+    publicId: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserEntity> {
     try {
       const updatedUsers = await this.drizzleService.db
         .update(databaseSchema.users)
         .set(updateUserDto)
-        .where(eq(databaseSchema.users.id, id))
+        .where(eq(databaseSchema.users.publicId, publicId))
         .returning(safeUser);
 
       if (!updatedUsers.length) {
@@ -239,11 +238,11 @@ export class UsersService {
     }
   }
 
-  async remove(id: string): Promise<UserEntity> {
+  async remove(publicId: string): Promise<UserEntity> {
     try {
       const deletedUsers = await this.drizzleService.db
         .delete(databaseSchema.users)
-        .where(eq(databaseSchema.users.id, id))
+        .where(eq(databaseSchema.users.publicId, publicId))
         .returning(safeUser);
 
       if (!deletedUsers.length) {

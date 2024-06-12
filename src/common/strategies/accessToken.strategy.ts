@@ -3,9 +3,11 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 
-type JWTPayload = {
+export type JWTPayload = {
   sub: string;
-  displayName: string;
+  name: string;
+  iat: number;
+  exp: number;
 };
 
 @Injectable()

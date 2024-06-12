@@ -1,4 +1,3 @@
-import { createId } from '@paralleldrive/cuid2';
 import { relations } from 'drizzle-orm';
 import {
   text,
@@ -7,21 +6,34 @@ import {
   serial,
   integer,
   primaryKey,
+  varchar,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
+import { customId } from '../utils/custom-id/custom-id';
 
-export const users = pgTable('users', {
-  id: text('id')
-    .$defaultFn(() => createId())
-    .primaryKey(),
-  email: text('email').unique().notNull(),
-  username: text('username').unique(),
-  password: text('password').notNull(),
-  name: text('name').notNull(),
-  refreshToken: text('refresh_token'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-  deletedAt: timestamp('deleted_at'),
-});
+export const users = pgTable(
+  'users',
+  {
+    id: serial('id').primaryKey(),
+    publicId: varchar('public_id', { length: 12 })
+      .$defaultFn(() => customId())
+      .unique()
+      .notNull(),
+    email: text('email').unique().notNull(),
+    username: text('username').unique(),
+    password: text('password').notNull(),
+    name: text('name').notNull(),
+    refreshToken: text('refresh_token'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    deletedAt: timestamp('deleted_at'),
+  },
+  (table) => {
+    return {
+      publicIdIdx: uniqueIndex('idx_user_public_id').on(table.publicId),
+    };
+  },
+);
 
 export const propertyTypes = pgTable('property_types', {
   id: serial('id').primaryKey(),
@@ -35,56 +47,78 @@ export const propertyCategories = pgTable('property_categories', {
   slug: text('slug').notNull(),
 });
 
-export const properties = pgTable('properties', {
-  id: text('id')
-    .$defaultFn(() => createId())
-    .primaryKey(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-  deletedAt: timestamp('deleted_at'),
-});
+export const properties = pgTable(
+  'properties',
+  {
+    id: serial('id').primaryKey(),
+    publicId: varchar('public_id', { length: 12 })
+      .$defaultFn(() => customId())
+      .unique()
+      .notNull(),
+    title: text('title').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.publicId),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    deletedAt: timestamp('deleted_at'),
+  },
+  (table) => {
+    return {
+      publicIdIdx: uniqueIndex('idx_properties_public_id').on(table.publicId),
+    };
+  },
+);
 
 export const propertyOnTypes = pgTable(
   'property_on_types',
   {
-    propertyId: text('property_id')
+    propertyId: integer('property_id')
       .notNull()
       .references(() => properties.id),
     typeId: integer('type_id')
       .notNull()
       .references(() => propertyTypes.id),
   },
-  (t) => ({
-    pk: primaryKey({ columns: [t.propertyId, t.typeId] }),
+  (table) => ({
+    pk: primaryKey({ columns: [table.propertyId, table.typeId] }),
   }),
 );
 
 export const propertyOnCategories = pgTable(
   'property_on_categories',
   {
-    propertyId: text('property_id')
+    propertyId: integer('property_id')
       .notNull()
       .references(() => properties.id),
     categoryId: integer('category_id')
       .notNull()
       .references(() => propertyCategories.id),
   },
-  (t) => ({
-    pk: primaryKey({ columns: [t.propertyId, t.categoryId] }),
+  (table) => ({
+    pk: primaryKey({ columns: [table.propertyId, table.categoryId] }),
   }),
 );
 
-export const passwordRecovery = pgTable('password-recovery', {
-  id: text('id')
-    .$defaultFn(() => createId())
-    .primaryKey(),
-  userId: text('user_id').notNull(),
-  token: text('token').unique().notNull(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+export const passwordRecovery = pgTable(
+  'password-recovery',
+  {
+    id: serial('id').primaryKey(),
+    publicId: varchar('public_id', { length: 12 })
+      .$defaultFn(() => customId())
+      .notNull(),
+    userId: text('user_id').notNull(),
+    token: text('token').unique().notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => {
+    return {
+      publicIdIdx: uniqueIndex('idx_password_recovery_public_id').on(
+        table.publicId,
+      ),
+    };
+  },
+);
 
 export const userRelations = relations(users, ({ many }) => ({
   properties: many(properties),

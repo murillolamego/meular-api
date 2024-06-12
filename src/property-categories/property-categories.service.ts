@@ -8,7 +8,6 @@ import { CreatePropertyCategoryDto } from './dto/create-property-category.dto';
 import { UpdatePropertyCategoryDto } from './dto/update-property-category.dto';
 import { databaseSchema } from '../database/database-schema';
 import { DrizzleService } from '../database/drizzle.service';
-import { dbConstraintFail } from '../utils/dbContraint/dbConstraint';
 import { eq } from 'drizzle-orm';
 import { createSlug } from '../utils/slug/slug';
 
@@ -32,9 +31,6 @@ export class PropertyCategoriesService {
 
       return createdPropertyCategory[0];
     } catch (error) {
-      if (error.code === '23505') {
-        throw new BadRequestException(dbConstraintFail(error.constraint));
-      }
       throw new ServiceUnavailableException(
         'property type creation on database failed',
       );

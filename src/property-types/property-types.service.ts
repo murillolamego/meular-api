@@ -1,14 +1,12 @@
 import {
   Injectable,
   ServiceUnavailableException,
-  BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreatePropertyTypeDto } from './dto/create-property-type.dto';
 import { UpdatePropertyTypeDto } from './dto/update-property-type.dto';
 import { DrizzleService } from '../database/drizzle.service';
 import { databaseSchema } from '../database/database-schema';
-import { dbConstraintFail } from '../utils/dbContraint/dbConstraint';
 import { eq } from 'drizzle-orm';
 import { createSlug } from '../utils/slug/slug';
 
@@ -32,9 +30,6 @@ export class PropertyTypesService {
 
       return createdPropertyType[0];
     } catch (error) {
-      if (error.code === '23505') {
-        throw new BadRequestException(dbConstraintFail(error.constraint));
-      }
       throw new ServiceUnavailableException(
         'property type creation on database failed',
       );

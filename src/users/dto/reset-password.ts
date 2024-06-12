@@ -4,11 +4,11 @@ import {
   IsStrongPassword,
   MaxLength,
 } from 'class-validator';
-import { IsCUID } from '../../common/validators/cuid.validator';
+import { IsNanoId } from '../../common/validators/nanoid.validator';
 
 export class ResetPasswordDto {
-  @IsCUID()
-  id: string;
+  @IsNanoId()
+  publicId: string;
 
   @IsString()
   @IsNotEmpty()

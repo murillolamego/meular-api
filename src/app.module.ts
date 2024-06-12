@@ -9,6 +9,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { PropertyCategoriesModule } from './property-categories/property-categories.module';
 import { PropertyTypesModule } from './property-types/property-types.module';
+import { PropertiesModule } from './properties/properties.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { PropertyTypesModule } from './property-types/property-types.module';
     }),
     PropertyCategoriesModule,
     PropertyTypesModule,
+    PropertiesModule,
   ],
   providers: [
     {
