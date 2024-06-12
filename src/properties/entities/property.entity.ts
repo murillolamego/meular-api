@@ -1,6 +1,6 @@
 // NOT SAFE - only use internally
 export class UnsafePropertyEntity {
-  id: string;
+  id: number;
   publicId: string;
   userId: string;
   createdAt: Date;
@@ -12,7 +12,7 @@ export class UnsafePropertyEntity {
 export class PropertyEntity {
   publicId: string;
   userId: string;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
+  //createdAt: Date;
+  //updatedAt: Date;
+  //deletedAt: Date | null;
 }

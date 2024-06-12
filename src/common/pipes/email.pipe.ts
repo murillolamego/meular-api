@@ -2,7 +2,7 @@ import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
 import { isEmail } from 'class-validator';
 
 @Injectable()
-export class parseEmail implements PipeTransform<string, string> {
+export class parseEmailPipe implements PipeTransform<string, string> {
   transform(value: string): string {
     if (isEmail(value)) {
       return value;

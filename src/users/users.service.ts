@@ -18,9 +18,15 @@ import { randomBytes } from 'crypto';
 import { ResetPasswordDto } from './dto/reset-password';
 
 // Only select SAFE columns, omit id, password, refresh tokens, etc
-const { id, password, refreshToken, ...safeUserColumns } = getTableColumns(
-  databaseSchema.users,
-);
+const {
+  id,
+  password,
+  refreshToken,
+  createdAt,
+  updatedAt,
+  deletedAt,
+  ...safeUserColumns
+} = getTableColumns(databaseSchema.users);
 
 export const safeUser = safeUserColumns;
 
@@ -39,6 +45,9 @@ export class UsersService {
         .insert(databaseSchema.users)
         .values(createUserDto)
         .returning(safeUser);
+      if (!createdUser.length) {
+        throw new ServiceUnavailableException();
+      }
 
       return createdUser[0];
     } catch (error) {

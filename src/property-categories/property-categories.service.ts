@@ -1,7 +1,6 @@
 import {
   Injectable,
   ServiceUnavailableException,
-  BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreatePropertyCategoryDto } from './dto/create-property-category.dto';

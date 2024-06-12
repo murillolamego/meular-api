@@ -56,9 +56,9 @@ export const properties = pgTable(
       .unique()
       .notNull(),
     title: text('title').notNull(),
-    userId: text('user_id')
+    userId: varchar('user_id', { length: 12 })
       .notNull()
-      .references(() => users.publicId),
+      .references(() => users.publicId, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
     deletedAt: timestamp('deleted_at'),
@@ -70,30 +70,30 @@ export const properties = pgTable(
   },
 );
 
-export const propertyOnTypes = pgTable(
-  'property_on_types',
+export const propertiesToTypes = pgTable(
+  'property_to_types',
   {
     propertyId: integer('property_id')
       .notNull()
-      .references(() => properties.id),
+      .references(() => properties.id, { onDelete: 'cascade' }),
     typeId: integer('type_id')
       .notNull()
-      .references(() => propertyTypes.id),
+      .references(() => propertyTypes.id, { onDelete: 'cascade' }),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.propertyId, table.typeId] }),
   }),
 );
 
-export const propertyOnCategories = pgTable(
-  'property_on_categories',
+export const propertiesToCategories = pgTable(
+  'property_to_categories',
   {
     propertyId: integer('property_id')
       .notNull()
-      .references(() => properties.id),
+      .references(() => properties.id, { onDelete: 'cascade' }),
     categoryId: integer('category_id')
       .notNull()
-      .references(() => propertyCategories.id),
+      .references(() => propertyCategories.id, { onDelete: 'cascade' }),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.propertyId, table.categoryId] }),
@@ -107,7 +107,9 @@ export const passwordRecovery = pgTable(
     publicId: varchar('public_id', { length: 12 })
       .$defaultFn(() => customId())
       .notNull(),
-    userId: text('user_id').notNull(),
+    userId: varchar('user_id', { length: 12 })
+      .notNull()
+      .references(() => users.publicId, { onDelete: 'cascade' }),
     token: text('token').unique().notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
   },
@@ -120,56 +122,67 @@ export const passwordRecovery = pgTable(
   },
 );
 
-export const userRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many }) => ({
   properties: many(properties),
+  passwordRecovery: many(passwordRecovery),
 }));
 
 export const propertyTypesRelations = relations(propertyTypes, ({ many }) => ({
-  properties: many(propertyOnTypes),
+  properties: many(propertiesToTypes),
 }));
 
 export const propertyCategoriesRelations = relations(
   propertyCategories,
   ({ many }) => ({
-    properties: many(propertyOnCategories),
+    properties: many(propertiesToCategories),
   }),
 );
 
 export const propertiesRelations = relations(properties, ({ one, many }) => ({
   user: one(users, {
     fields: [properties.userId],
-    references: [users.id],
+    references: [users.publicId],
   }),
-  types: many(propertyOnTypes),
-  categories: many(propertyOnCategories),
+  types: many(propertiesToTypes),
+  categories: many(propertiesToCategories),
 }));
 
-export const propertyOnTypesRelations = relations(
-  propertyOnTypes,
+export const propertiesToTypesRelations = relations(
+  propertiesToTypes,
   ({ one }) => ({
     property: one(properties, {
-      fields: [propertyOnTypes.propertyId],
+      fields: [propertiesToTypes.propertyId],
       references: [properties.id],
     }),
 
     type: one(propertyTypes, {
-      fields: [propertyOnTypes.typeId],
+      fields: [propertiesToTypes.typeId],
       references: [propertyTypes.id],
     }),
   }),
 );
 
-export const propertyOnCategoriesRelations = relations(
-  propertyOnCategories,
+export const propertiesToCategoriesRelations = relations(
+  propertiesToCategories,
   ({ one }) => ({
     property: one(properties, {
-      fields: [propertyOnCategories.propertyId],
+      fields: [propertiesToCategories.propertyId],
       references: [properties.id],
     }),
 
     category: one(propertyCategories, {
-      fields: [propertyOnCategories.categoryId],
+      fields: [propertiesToCategories.categoryId],
       references: [propertyCategories.id],
+    }),
+  }),
+);
+
+export const passwordRecoveryRelations = relations(
+  passwordRecovery,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [passwordRecovery.userId],
+      references: [users.publicId],
     }),
   }),
 );
@@ -180,4 +193,6 @@ export const databaseSchema = {
   properties,
   propertyTypes,
   propertyCategories,
+  propertiesToCategories,
+  propertiesToTypes,
 };

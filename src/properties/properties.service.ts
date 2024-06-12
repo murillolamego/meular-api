@@ -4,7 +4,10 @@ import { UpdatePropertyDto } from './dto/update-property.dto';
 import { DrizzleService } from '../database/drizzle.service';
 import { databaseSchema } from '../database/database-schema';
 import { eq, getTableColumns } from 'drizzle-orm';
-import { PropertyEntity } from './entities/property.entity';
+import {
+  PropertyEntity,
+  UnsafePropertyEntity,
+} from './entities/property.entity';
 import {
   NotFoundException,
   ServiceUnavailableException,
@@ -12,11 +15,15 @@ import {
 import { JWTPayload } from '../common/strategies/accessToken.strategy';
 
 // Only select SAFE columns, omit id, etc
-const { id, ...safePropertyCols } = getTableColumns(databaseSchema.properties);
+const { id, createdAt, updatedAt, deletedAt, ...safePropertyCols } =
+  getTableColumns(databaseSchema.properties);
 
 export const safeProperty = safePropertyCols;
 
-type Property = CreatePropertyDto & { userId: string };
+// Omit relations
+type Property = Omit<CreatePropertyDto, 'types' | 'categories'> & {
+  userId: string;
+};
 
 @Injectable()
 export class PropertiesService {
@@ -32,13 +39,41 @@ export class PropertiesService {
         userId: sub,
       };
 
-      const createdProperty = await this.drizzleService.db
-        .insert(databaseSchema.properties)
-        .values(property)
-        .returning(safeProperty);
+      let createdProperty: UnsafePropertyEntity[] = [];
+      await this.drizzleService.db.transaction(async (tx) => {
+        createdProperty = await tx
+          .insert(databaseSchema.properties)
+          .values(property)
+          .returning();
+
+        if (!createdProperty.length) {
+          throw new ServiceUnavailableException();
+        }
+
+        for (const propertyTypeId of createPropertyDto.types) {
+          await tx.insert(databaseSchema.propertiesToTypes).values({
+            propertyId: createdProperty[0].id,
+            typeId: propertyTypeId,
+          });
+        }
+
+        for (const propertyCategoryId of createPropertyDto.categories) {
+          await tx.insert(databaseSchema.propertiesToCategories).values({
+            propertyId: createdProperty[0].id,
+            categoryId: propertyCategoryId,
+          });
+        }
+      });
+
+      if (!createdProperty.length) {
+        throw new ServiceUnavailableException();
+      }
 
       return createdProperty[0];
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(error.message);
+      }
       throw new ServiceUnavailableException(
         'property creation on database failed',
       );
@@ -57,6 +92,19 @@ export class PropertiesService {
     }
   }
 
+  async findAllByUserId(userId: string): Promise<PropertyEntity[]> {
+    try {
+      return await this.drizzleService.db
+        .select(safeProperty)
+        .from(databaseSchema.properties)
+        .where(eq(databaseSchema.properties.userId, userId));
+    } catch (error) {
+      throw new ServiceUnavailableException(
+        `fetching properties of user id ${userId} from database failed`,
+      );
+    }
+  }
+
   async findOne(id: string): Promise<PropertyEntity> {
     try {
       const properties: PropertyEntity[] = await this.drizzleService.db
@@ -70,10 +118,10 @@ export class PropertiesService {
       return properties[0];
     } catch (error) {
       if (error instanceof NotFoundException) {
-        throw new NotFoundException(`propertie with id ${id} not found`);
+        throw new NotFoundException(`property with id ${id} not found`);
       }
       throw new ServiceUnavailableException(
-        `fetching propertie with id ${id} from database failed`,
+        `fetching property with id ${id} from database failed`,
       );
     }
   }
@@ -95,10 +143,10 @@ export class PropertiesService {
       return updatedPropertys[0];
     } catch (error) {
       if (error instanceof NotFoundException) {
-        throw new NotFoundException(`propertie with id ${id} not found`);
+        throw new NotFoundException(`property with id ${id} not found`);
       }
       throw new ServiceUnavailableException(
-        `updating propertie with id ${id} on database failed, params: ${updatePropertyDto}`,
+        `updating property with id ${id} on database failed, params: ${updatePropertyDto}`,
       );
     }
   }
@@ -117,10 +165,10 @@ export class PropertiesService {
       return deletedPropertys[0];
     } catch (error) {
       if (error instanceof NotFoundException) {
-        throw new NotFoundException(`propertie with id ${id} not found`);
+        throw new NotFoundException(`property with id ${id} not found`);
       }
       throw new ServiceUnavailableException(
-        `removing propertie with id ${id} on database failed`,
+        `removing property with id ${id} on database failed`,
       );
     }
   }

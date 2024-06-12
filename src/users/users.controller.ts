@@ -16,8 +16,8 @@ import { UsersService } from './users.service';
 import { Throttle } from '@nestjs/throttler';
 import { UseGuards } from '@nestjs/common/decorators';
 import { AccessTokenGuard } from '../common/guards/accessToken.guard';
-import { parseEmail } from '../common/pipes/email.pipe';
-import { parseNanoId } from '../common/pipes/nanoid.pipe';
+import { parseEmailPipe } from '../common/pipes/email.pipe';
+import { parseNanoIdPipe } from '../common/pipes/nanoid.pipe';
 import { ResetPasswordDto } from './dto/reset-password';
 
 @ApiTags('users')
@@ -78,7 +78,7 @@ export class UsersController {
     status: 503,
     description: 'The server could not process your request at this moment',
   })
-  findOne(@Param('id', parseNanoId) id: string): Promise<UserEntity> {
+  findOne(@Param('id', parseNanoIdPipe) id: string): Promise<UserEntity> {
     return this.usersService.findOne(id);
   }
 
@@ -100,7 +100,7 @@ export class UsersController {
     description: 'The server could not process your request at this moment',
   })
   findOneByEmail(
-    @Param('email', parseEmail) email: string,
+    @Param('email', parseEmailPipe) email: string,
   ): Promise<UserEntity> {
     return this.usersService.findOneByEmail(email);
   }
@@ -131,7 +131,7 @@ export class UsersController {
     status: 503,
     description: 'The server could not process your request at this moment',
   })
-  forgotPassword(@Param('email', parseEmail) email: string): Promise<void> {
+  forgotPassword(@Param('email', parseEmailPipe) email: string): Promise<void> {
     return this.usersService.forgotPassword(email);
   }
 
@@ -157,7 +157,7 @@ export class UsersController {
     description: 'The server could not process your request at this moment',
   })
   update(
-    @Param('id', parseNanoId) id: string,
+    @Param('id', parseNanoIdPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserEntity> {
     return this.usersService.update(id, updateUserDto);
@@ -184,7 +184,7 @@ export class UsersController {
     status: 503,
     description: 'The server could not process your request at this moment',
   })
-  remove(@Param('id', parseNanoId) id: string): Promise<UserEntity> {
+  remove(@Param('id', parseNanoIdPipe) id: string): Promise<UserEntity> {
     return this.usersService.remove(id);
   }
 }

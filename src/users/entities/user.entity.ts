@@ -18,7 +18,7 @@ export class UserEntity {
   email: string;
   username: string | null;
   name: string;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
+  //createdAt: Date;
+  //updatedAt: Date;
+  //deletedAt: Date | null;
 }
