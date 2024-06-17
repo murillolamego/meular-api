@@ -8,6 +8,7 @@ import {
   primaryKey,
   varchar,
   uniqueIndex,
+  boolean,
 } from 'drizzle-orm/pg-core';
 import { customId } from '../utils/custom-id/custom-id';
 
@@ -24,6 +25,8 @@ export const users = pgTable(
     password: text('password').notNull(),
     name: text('name').notNull(),
     refreshToken: text('refresh_token'),
+    emailValidated: boolean('email_validated').notNull().default(false),
+    emailValidationToken: text('email_validation_token').unique(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
     deletedAt: timestamp('deleted_at'),

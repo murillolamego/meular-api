@@ -18,7 +18,8 @@ import { UseGuards } from '@nestjs/common/decorators';
 import { AccessTokenGuard } from '../common/guards/accessToken.guard';
 import { parseEmailPipe } from '../common/pipes/email.pipe';
 import { parseNanoIdPipe } from '../common/pipes/nanoid.pipe';
-import { ResetPasswordDto } from './dto/reset-password';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ValidateEmailDto } from './dto/validate-email.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -103,6 +104,21 @@ export class UsersController {
     @Param('email', parseEmailPipe) email: string,
   ): Promise<UserEntity> {
     return this.usersService.findOneByEmail(email);
+  }
+
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Post('/validate-email')
+  @ApiResponse({
+    status: 200,
+    description: 'Email validation successful',
+  })
+  @ApiResponse({ status: 404, description: 'Record not found' })
+  @ApiResponse({
+    status: 503,
+    description: 'The server could not process your request at this moment',
+  })
+  validateEmail(@Body() validateEmailDto: ValidateEmailDto): Promise<void> {
+    return this.usersService.validateEmail(validateEmailDto);
   }
 
   @Throttle({ default: { limit: 3, ttl: 60000 } })

@@ -15,13 +15,16 @@ import { NotFoundException } from '@nestjs/common/exceptions';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'crypto';
-import { ResetPasswordDto } from './dto/reset-password';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ValidateEmailDto } from './dto/validate-email.dto';
 
 // Only select SAFE columns, omit id, password, refresh tokens, etc
 const {
   id,
   password,
   refreshToken,
+  emailValidated,
+  emailValidationToken,
   createdAt,
   updatedAt,
   deletedAt,
@@ -38,21 +41,47 @@ export class UsersService {
     private readonly mailerService: MailerService,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<UserEntity> {
+  async create({ email, name, password }: CreateUserDto): Promise<UserEntity> {
+    let createdUser: UserEntity[] = [];
+    let token = randomBytes(25).toString('hex');
+
     try {
-      createUserDto.password = await argon2.hash(createUserDto.password);
-      const createdUser = await this.drizzleService.db
+      const hashedToken = await argon2.hash(token);
+
+      password = await argon2.hash(password);
+      createdUser = await this.drizzleService.db
         .insert(databaseSchema.users)
-        .values(createUserDto)
+        .values({
+          email,
+          name,
+          password,
+          emailValidationToken: hashedToken,
+        })
         .returning(safeUser);
       if (!createdUser.length) {
         throw new ServiceUnavailableException();
       }
-
-      return createdUser[0];
     } catch (error) {
       throw new ServiceUnavailableException('user creation on database failed');
     }
+
+    try {
+      await this.mailerService.sendMail({
+        to: 'murillolamegolopes@live.com',
+        from: this.configService.get<string>('EMAIL_FROM'),
+        subject: `Email validation for <${createdUser[0].email}>`,
+        template: 'email-validation',
+        context: {
+          email: createdUser[0].email,
+          name: createdUser[0].name,
+          token,
+        },
+      });
+    } catch (error) {
+      throw new ServiceUnavailableException(`Sending email failed`);
+    }
+
+    return createdUser[0];
   }
 
   async findAll(): Promise<UserEntity[]> {
@@ -105,6 +134,68 @@ export class UsersService {
       }
       throw new ServiceUnavailableException(
         `fetching user with email ${email} from database failed`,
+      );
+    }
+  }
+
+  async validateEmail({ publicId, token }: ValidateEmailDto): Promise<void> {
+    try {
+      const validateEmail = await this.drizzleService.db
+        .select()
+        .from(databaseSchema.users)
+        .where(eq(databaseSchema.users.publicId, publicId))
+        .limit(1);
+      if (!validateEmail.length) {
+        throw new NotFoundException('invalid token provided');
+      }
+
+      if (
+        validateEmail[0].emailValidated ||
+        !validateEmail[0].emailValidationToken
+      ) {
+        throw new BadRequestException('user already active');
+      }
+
+      if (
+        new Date().getTime() - new Date(validateEmail[0].createdAt).getTime() >
+        Number(
+          this.configService.get<string>('EMAIL_VALIDATION_DURATION_IN_DAYS'),
+        ) *
+          24 *
+          60 *
+          60 * // seconds
+          1000 // milliseconds
+      ) {
+        throw new BadRequestException('expired token provided');
+      }
+
+      const validateEmailMatch = await argon2.verify(
+        validateEmail[0].emailValidationToken as string,
+        token,
+      );
+
+      if (!validateEmailMatch) {
+        throw new NotFoundException('invalid token provided');
+      }
+
+      const updatedUsers = await this.drizzleService.db
+        .update(databaseSchema.users)
+        .set({ emailValidated: true, emailValidationToken: null })
+        .where(eq(databaseSchema.users.publicId, validateEmail[0].publicId))
+        .returning(safeUser);
+
+      if (!updatedUsers.length) {
+        throw new ServiceUnavailableException();
+      }
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(error.message);
+      }
+      if (error instanceof BadRequestException) {
+        throw new BadRequestException(error.message);
+      }
+      throw new ServiceUnavailableException(
+        `fetching password recovery token from database failed`,
       );
     }
   }

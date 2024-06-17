@@ -7,6 +7,8 @@ export class UnsafeUserEntity {
   password: string;
   name: string;
   refreshToken: string | null;
+  emailValidated: boolean;
+  emailValidationToken: string | null;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
@@ -18,6 +20,9 @@ export class UserEntity {
   email: string;
   username: string | null;
   name: string;
+  //refreshToken: string | null;
+  //emailValidated: boolean;
+  //emailValidationToken: string | null;
   //createdAt: Date;
   //updatedAt: Date;
   //deletedAt: Date | null;
